@@ -4,6 +4,33 @@ import haxe.FastList;
 
 typedef Easing = Float -> Float -> Float -> Float -> Float
 
+/**
+* Class that allows tweening properties of an object.<br/>
+* Version 1.3.0
+* Compatible haxe 2.08 - flash/flash9+/js/neko/cpp
+* Usage :<br/>
+* import feffects.Tween;<br/>
+* import feffects.easing.Elastic;<br/>
+* 
+* using feffects.Tween.TweenObject;
+* ...<br/>
+* var mySprite = new Sprite();
+* mySprite.graphics.beginFill( 0 );
+* mySprite.graphics.drawCircle( 0, 0, 20 );
+* mySprite.graphics.endFill();
+* 
+* Lib.current.addChild( mySprite );
+* 
+* function foo() {
+* 	trace( "end" );
+* }
+* 
+* mySprite.tween( { x : 100, y : 200 }, 1000 ).onFinish( foo ).start();
+* 
+* @author : M.Romecki
+* 
+*/
+
 class TweenObject {
 	
 	public var tweens		(default, null)		: Array<Tween>;
