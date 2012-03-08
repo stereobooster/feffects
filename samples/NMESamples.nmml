@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	<app title="FEffects sample" main="Main" package="com.filt3rek.FEffectsSample" version="1.0.0" company="filt3rek" file="FEffectsSample" ></app>
+	<window width="640" height="480" fps="30" orientation="landscape" resizable="true" ></window>
+
+	<set name="BUILD_DIR" value="export" ></set>
+
+	<haxelib name="nme" ></haxelib>
+	<haxelib name="feffects" ></haxelib>
+	<compilerflag name="--remap neko:cpp" if="target_cpp" />
+
+	<ndll name="std" ></ndll>
+	<ndll name="regexp" ></ndll>
+	<ndll name="zlib" ></ndll>
+	<ndll name="nme" haxelib="nme" ></ndll>
+</project>
