@@ -257,6 +257,7 @@ class Tween{
 	
 	public function start() : Void {
 		_startTime = getStamp();
+		_reverseTime = getStamp();
 				
 		if ( duration == 0 )
 			endTween();
@@ -273,7 +274,8 @@ class Tween{
 	}
 	
 	public function resume() : Void {
-		_startTime = _reverseTime = _startTime + getStamp() - _pauseTime;
+		_startTime += getStamp() - _pauseTime;
+		_reverseTime += getStamp() - _pauseTime;
 				
 		Tween.setTweenActive( this );
 		isPlaying = true;
