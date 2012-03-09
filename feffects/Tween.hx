@@ -363,6 +363,7 @@ class Tween{
 	function endTween() : Void {
 		RemoveTween( this );
 		var val = 0.0;
+		isPlaying = false;
 		if ( reversed )
 			val = _initVal;
 		else
