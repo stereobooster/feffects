@@ -186,8 +186,6 @@ class Tween{
 	var _easingF		: Easing;
 				
 	static function AddTween( tween : Tween ) : Void {
-		if( _timer == null )
-			_timer = new haxe.Timer( INTERVAL ) ;
 		_aTweens.add( tween ) ;
 		_timer.run = DispatchTweens;
 	}
@@ -256,6 +254,11 @@ class Tween{
 	}
 	
 	public function start() : Void {
+		
+		if( _timer != null )
+			_timer.stop();
+		_timer = new haxe.Timer( INTERVAL ) ;
+		
 		_startTime = getStamp();
 		_reverseTime = getStamp();
 				
