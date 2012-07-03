@@ -54,7 +54,7 @@ class TweenObject {
 	public function start() {
 		for ( key in Reflect.fields( settings.properties ) ) {
 			var prop = { };
-			Reflect.setField( prop, key, Reflect.field( settings.properties, key ) );
+			Reflect.setProperty( prop, key, Reflect.getProperty( settings.properties, key ) );
 			var tweenProp = new TweenProperty( settings.target, prop, settings.duration, settings.easing, _endF );
 			tweens.push( tweenProp );
 		}
@@ -113,8 +113,8 @@ private class TweenProperty extends Tween{
 		_property = Reflect.fields( prop )[ 0 ];
 		__endF = endF;
 		
-		var init = Reflect.field( target, _property );
-		var end = Reflect.field( prop, _property );
+		var init = Reflect.getProperty( target, _property );
+		var end = Reflect.getProperty( prop, _property );
 		
 		super( init, end, duration, easing );
 		
@@ -123,7 +123,7 @@ private class TweenProperty extends Tween{
 	}
 	
 	function _updateF( n : Float ) {
-		Reflect.setField( _target, _property, n ); 
+		Reflect.setProperty( _target, _property, n );
 	}
 	
 	function _endF() {
