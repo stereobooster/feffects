@@ -11,12 +11,18 @@ import feffects.easing.Linear;
 import feffects.easing.Quad;
 import feffects.easing.Quart;
 
-#if (flash9||nme)
+#if flash9
 	import flash.display.MovieClip;
+	import flash.Lib;
 #elseif flash
 	import flash.MovieClip;
+	import flash.Lib;
 #elseif js
 	import js.Dom;
+	import js.Lib;
+#elseif nme
+	import nme.display.MovieClip;
+	import nme.Lib;
 #end
 
 using feffects.Tween.TweenObject;
@@ -45,9 +51,9 @@ class Main {
 				sprite.x = i * 10 + 30;
 				var gfx = sprite.graphics;
 				gfx.beginFill( 0x000000, 1 );
-				flash.Lib.current.addChild( sprite );
+				Lib.current.addChild( sprite );
 			#elseif flash
-				var sprite = flash.Lib.current.createEmptyMovieClip( "sprite" + i, i );
+				var sprite = Lib.current.createEmptyMovieClip( "sprite" + i, i );
 				sprite._x = i * 10 + 30;
 				var gfx = sprite;
 				gfx.beginFill( 0x000000, 100 );
@@ -60,21 +66,19 @@ class Main {
 				gfx.endFill();
 			#elseif js
 				var sprite = js.Lib.document.createElement( "div" );
-				js.Lib.document.body.appendChild( sprite );
+				Lib.document.body.appendChild( sprite );
 				sprite.style.position = "absolute";
 				sprite.style.backgroundColor = "#000000";
-				sprite.style.padding = 5;
+				sprite.style.padding = "5px";
 				sprite.style.left = i * 10 + 30 + "px";
 			#end
 			
-			#if (flash9||nme)
-			var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
-			#elseif flash
-			var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
-			#elseif js
-			// special js treatment
-			var t = new Tween( 50, 150, 2000, effects[ i ] );
-			t.onUpdate( function ( e ) update( sprite, e ) );
+			#if js
+				// special js treatment
+				var t = new Tween( 50, 150, 2000, effects[ i ] );
+				t.onUpdate( function ( e ) update( sprite, e ) );
+			#else
+				var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
 			#end
 			t.start();
 			t.seek( 350 );

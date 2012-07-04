@@ -7,7 +7,6 @@
 
 	<haxelib name="nme" ></haxelib>
 	<haxelib name="feffects" ></haxelib>
-	<compilerflag name="--remap neko:cpp" if="target_cpp" />
 
 	<ndll name="std" ></ndll>
 	<ndll name="regexp" ></ndll>

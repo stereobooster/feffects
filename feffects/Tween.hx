@@ -6,7 +6,7 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 
 /**
 * Class that allows tweening properties of an object.<br/>
-* Version 1.3.0
+* Version 1.3.1
 * Compatible haxe 2.08 - flash/flash9+/js/neko/cpp
 * Usage :<br/>
 * import feffects.Tween;<br/>
@@ -354,8 +354,10 @@ class Tween{
 	}
 	
 	inline function getStamp() {
-		#if (neko || cpp)
+		#if neko
 			return neko.Sys.time() * 1000;
+		#elseif cpp
+			return cpp.Sys.time() * 1000;
 		#elseif js
 			return Date.now().getTime();
 		#elseif flash

@@ -8,6 +8,6 @@
     <tag v="neko"/>
     <tag v="cpp"/>
     <tag v="nme"/>
-    <description>Set of effects (tweens, sineloops...) targetting Flash 8, Flash 9+, neko, javascript and c++(remap neko:cpp)</description>
-    <version name="1.3.0">1.3.0 : flash/flash9+/js/neko/cpp full support, global optimizations done + easing optimizations (thx Andy;)</version>
+    <description>Set of effects (tweens, sineloops...) targetting Flash 8, Flash 9+, neko, javascript and c++</description>
+    <version name="1.3.1">1.3.1 : Haxe 2.10 compatible (fields/properties fixed)</version>
 </project>

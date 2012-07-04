@@ -1,3 +1,4 @@
+1.3.1 : Haxe 2.10 compatible (fields/properies fixed)
 1.3.0 : new user-friendly synthax
 1.2.0 : flash/flash9+/js/neko/cpp full support, global optimizations done + easing optimizations (thx Andy;)
 1.1.3 : C++ added, minor bug fixed and some optimizations done
