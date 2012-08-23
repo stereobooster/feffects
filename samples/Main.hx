@@ -14,7 +14,7 @@ import feffects.easing.Quart;
 #if flash9
 	import flash.display.MovieClip;
 	import flash.Lib;
-#elseif flash
+#elseif flash8
 	import flash.MovieClip;
 	import flash.Lib;
 #elseif js
@@ -64,6 +64,10 @@ class Main {
 				gfx.lineTo( 0, 10 );
 				gfx.lineTo( 0, 0 );
 				gfx.endFill();
+				
+				var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
+				
+			// special js treatment
 			#elseif js
 				var sprite = js.Lib.document.createElement( "div" );
 				Lib.document.body.appendChild( sprite );
@@ -71,15 +75,11 @@ class Main {
 				sprite.style.backgroundColor = "#000000";
 				sprite.style.padding = "5px";
 				sprite.style.left = i * 10 + 30 + "px";
+				
+				var t = new Tween( 50, 150, 2000, effects[ i ] );
+				t.onUpdate( function ( e ) sprite.style.top = e + "px" );
 			#end
 			
-			#if js
-				// special js treatment
-				var t = new Tween( 50, 150, 2000, effects[ i ] );
-				t.onUpdate( function ( e ) update( sprite, e ) );
-			#else
-				var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
-			#end
 			t.start();
 			t.seek( 350 );
 									
@@ -94,7 +94,6 @@ class Main {
 			i++;
 		}
 		
-		var me = this;
 		trace( "start for 2000ms tweening" );
 		trace( "seek at 350ms" );
 		haxe.Timer.delay( function() trace( "pause" ), 250 );
@@ -106,11 +105,6 @@ class Main {
 		haxe.Timer.delay( function() trace( "pause" ), 1750 );
 		haxe.Timer.delay( function() trace( "resume" ), 2000 );
 	}
-	#if js
-	function update( t : HtmlDom, e : Float ) {
-		t.style.top = e + "px";
-	}
-	#end
 	
 	public static function main() {
 		new Main();
