@@ -6,10 +6,9 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 
 /**
 * Class that allows tweening properties of an object.<br/>
-* Version 1.3.1
-* Compatible haxe 2.08 - flash/flash9+/js/neko/cpp
+* Version 1.3.2
+* Compatible haxe 2.11 - flash/flash9+/js/neko/cpp/NME
 * Usage :<br/>
-* import feffects.Tween;<br/>
 * import feffects.easing.Elastic;<br/>
 * 
 * using feffects.Tween.TweenObject;
@@ -27,37 +26,55 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 * 
 * mySprite.tween( { x : 100, y : 200 }, 1000 ).onFinish( foo ).start();
 * 
+* OR
+* 
+* mySprite.tween( {x : 100, y : 200 }, 1000, foo, true );
+* 
 * @author : M.Romecki
 * 
 */
 
 class TweenObject {
 	
-	public var tweens		(default, null)		: Array<Tween>;
-	public var settings							: { target : Dynamic, properties : Dynamic, duration : Int, easing : Easing };
+	public var tweens		(default, null)		: FastList<Tween>;
+	public var target		(default, null)		: Dynamic;
+	public var properties	(default, null)		: Dynamic;
+	public var duration		(default, null)		: Int;
+	public var easing		(default, null)		: Easing;
 	
-	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing ) {
-		return new TweenObject( target, properties, duration, easing );
+	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
+		return new TweenObject( target, properties, duration, easing, onFinish, autoStart );
 	}
 	
-	public function new( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing ) {
-		settings = {
-			target		: target,
-			properties	: properties,
-			duration	: duration,
-			easing		: easing
+	public function new( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
+		this.target		= target;
+		this.properties	= properties;
+		this.duration	= duration;
+		
+		if ( easing != null )
+			this.easing = easing;
+		if( onFinish != null )
+			endF = onFinish;
+		
+		tweens		= new FastList<Tween>();
+		for ( key in Reflect.fields( properties ) ) {
+			var prop = { };
+			Reflect.setProperty( prop, key, Reflect.getProperty( properties, key ) );
+			var tweenProp = new TweenProperty( target, prop, duration, easing, _endF );
+			tweens.add( tweenProp );
 		}
 		
-		tweens = [];
+		if ( autoStart )
+			start();
+	}
+	
+	public function setEasing( easing : Easing ) {
+		for ( tweenProp in tweens )
+			tweenProp.setEasing( easing );
+		return this;
 	}
 	
 	public function start() {
-		for ( key in Reflect.fields( settings.properties ) ) {
-			var prop = { };
-			Reflect.setProperty( prop, key, Reflect.getProperty( settings.properties, key ) );
-			var tweenProp = new TweenProperty( settings.target, prop, settings.duration, settings.easing, _endF );
-			tweens.push( tweenProp );
-		}
 		for ( tweenProp in tweens )
 			tweenProp.start();
 		return tweens;
@@ -97,7 +114,7 @@ class TweenObject {
 		
 	function _endF( tp : TweenProperty ) {
 		tweens.remove( tp );
-		if ( tweens.length == 0 )			
+		if ( tweens.isEmpty() )			
 			endF();
 	}
 }
@@ -122,19 +139,19 @@ private class TweenProperty extends Tween{
 		onFinish( _endF );
 	}
 	
-	function _updateF( n : Float ) {
+	inline function _updateF( n : Float ) {
 		Reflect.setProperty( _target, _property, n );
 	}
 	
-	function _endF() {
+	inline function _endF() {
 		__endF( this );
 	}
 }
 
 /**
 * Class that allows tweening numerical values of an object.<br/>
-* Version 1.3.0
-* Compatible haxe 2.08 - flash/flash9+/js/neko/cpp
+* Version 1.3.2
+* Compatible haxe 2.11 - flash/flash9+/js/neko/cpp/NME
 * Usage :<br/>
 * import feffects.Tween;<br/>
 * import feffects.easing.Elastic;<br/>
@@ -158,6 +175,10 @@ private class TweenProperty extends Tween{
 * OR combinated sythax :
 * 
 * new Tween( 0, 100, 2000 ).setEasing( Elastic.easeIn ).seek( 1000 ).onUpdate( foo ).onFinish( foo2 ).start();
+* 
+* OR fastest one : 
+*
+* new Tween( 0, 100, 2000, Elastic.easeIn, foo, foo2, true ).seek( 1000 );
 * 
 * @author : M.Romecki
 * 
@@ -184,10 +205,9 @@ class Tween{
 	var _reverseTime	: Float;
 	
 	var _easingF		: Easing;
-				
+	
 	static function AddTween( tween : Tween ) : Void {
-		_aTweens.add( tween ) ;
-		_timer.run = DispatchTweens;
+		_aTweens.add( tween );
 	}
 
 	static function RemoveTween( tween : Tween ) : Void {
@@ -195,7 +215,6 @@ class Tween{
 			return;
 					
 		_aTweens.remove( tween );
-								
 		if ( _aTweens.isEmpty() && _aPaused.isEmpty() )	{
 			_timer.stop() ;
 			_timer = null ;
@@ -236,7 +255,14 @@ class Tween{
 	* There is a default easing equation.
 	*/
 	
-	public function new( init : Float, end : Float, dur : Int, ?easing : Easing ) {
+	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?endF : Void->Void, autoStart = false ) {
+		if ( _timer == null )
+		{
+			_timer = new haxe.Timer( INTERVAL ) ;
+			_timer.run = DispatchTweens;
+			DispatchTweens();
+		}
+		
 		_initVal = init;
 		_endVal = end;
 		duration = dur;
@@ -250,18 +276,23 @@ class Tween{
 		else
 			_easingF = easingEquation;
 			
+		if ( updateF != null )
+			this.updateF = updateF;
+			
+		if ( endF != null )
+			this.endF = endF;
+			
 		isPlaying = false;
+		
+		if ( autoStart )
+			start();
 	}
 	
 	public function start() : Void {
 		
-		if( _timer != null )
-			_timer.stop();
-		_timer = new haxe.Timer( INTERVAL ) ;
-		
 		_startTime = getStamp();
 		_reverseTime = getStamp();
-				
+		
 		if ( duration == 0 )
 			endTween();
 		else
@@ -339,9 +370,9 @@ class Tween{
 		else
 			curTime = stamp - _startTime + _offsetTime;
 		}
-				
+		
 		var curVal = getCurVal( curTime );
-		if ( curTime >= duration || curTime <= 0 )
+		if ( curTime >= duration || curTime < 0 )
 			endTween();
 		else{
 			updateF( curVal );
