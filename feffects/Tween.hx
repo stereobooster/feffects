@@ -36,11 +36,18 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 
 class TweenObject {
 	
-	public var tweens		(default, null)		: FastList<Tween>;
-	public var target		(default, null)		: Dynamic;
-	public var properties	(default, null)		: Dynamic;
-	public var duration		(default, null)		: Int;
-	public var easing		(default, null)		: Easing;
+	public var tweens		(default, null)			: FastList<Tween>;
+	public var target		(default, null)			: Dynamic;
+	public var properties	(default, null)			: Dynamic;
+	public var duration		(default, null)			: Int;
+	public var easing		(default, null)			: Easing;
+	public var isPlaing		(get_isPlaying, null)	: Bool;
+	function get_isPlaying() {
+		for ( tween in tweens ) 
+			if ( tween.isPlaying )
+				return true;
+		return false;
+	}
 	
 	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
 		return new TweenObject( target, properties, duration, easing, onFinish, autoStart );
