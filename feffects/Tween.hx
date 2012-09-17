@@ -2,12 +2,22 @@
 
 import haxe.FastList;
 
+#if nme
+	import nme.Lib;
+	import nme.events.Event;
+#elseif flash
+	import flash.Lib;
+	import flash.events.Event;
+#elseif js
+	import haxe.Timer;
+#end
+
 typedef Easing = Float -> Float -> Float -> Float -> Float
 
 /**
 * Class that allows tweening properties of an object.<br/>
-* Version 1.3.2
-* Compatible haxe 2.11 - flash/flash9+/js/neko/cpp/NME
+* Version 1.3.3
+* Compatible haxe 2.11 - flash/js/NME
 * Usage :<br/>
 * import feffects.easing.Elastic;<br/>
 * 
@@ -157,8 +167,8 @@ private class TweenProperty extends Tween{
 
 /**
 * Class that allows tweening numerical values of an object.<br/>
-* Version 1.3.2
-* Compatible haxe 2.11 - flash/flash9+/js/neko/cpp/NME
+* Version 1.3.3
+* Compatible haxe 2.11 - flash/js/NME
 * Usage :<br/>
 * import feffects.Tween;<br/>
 * import feffects.easing.Elastic;<br/>
@@ -194,15 +204,20 @@ private class TweenProperty extends Tween{
 class Tween{
 	static var _aTweens	= new FastList<Tween>();
 	static var _aPaused	= new FastList<Tween>();
-	static var _timer	: haxe.Timer;
 	
-	public static var INTERVAL			= 10;
+	#if ( !nme && js )
+		static var _timer	: haxe.Timer;
+		public static var INTERVAL		= 10;
+	#end
+	
 	public static var DEFAULT_EASING	= easingEquation;
 			
 	public var duration	(default, null): Int;
 	public var position	(default, null): Int;
 	public var reversed	(default, null): Bool;
 	public var isPlaying(default, null): Bool;
+	
+	static var _isTweening	: Bool;
 			
 	var _initVal		: Float;
 	var _endVal			: Float;
@@ -218,14 +233,27 @@ class Tween{
 	}
 
 	static function RemoveTween( tween : Tween ) : Void {
-		if ( tween == null || _timer == null )
+		if ( !_isTweening )
 			return;
-					
 		_aTweens.remove( tween );
 		if ( _aTweens.isEmpty() && _aPaused.isEmpty() )	{
-			_timer.stop() ;
-			_timer = null ;
+			#if ( !nme && js )
+				_timer.stop() ;
+				_timer		= null ;
+				_isTweening = false;
+			#else
+				Lib.current.stage.removeEventListener( Event.ENTER_FRAME, cb_tick );
+			#end
 		}
+		
+	}
+	
+	public static function pauseAllTweens() {
+		
+	}
+	
+	public function resumeAllTweens() {
+		
 	}
 	
 	public static function getActiveTweens() : FastList<Tween> {
@@ -237,7 +265,7 @@ class Tween{
 	}
 	
 	static function setTweenPaused( tween : Tween ) : Void {
-		if ( tween == null || _timer == null )
+		if ( !_isTweening )
 			return;
 					
 		_aPaused.add( tween );
@@ -245,14 +273,14 @@ class Tween{
 	}
 	
 	static function setTweenActive( tween : Tween ) : Void {
-		if ( tween == null || _timer == null )
+		if ( !_isTweening )
 			return;
 					
 		_aTweens.add( tween );
 		_aPaused.remove( tween );
 	}
 
-	static function DispatchTweens() : Void	{
+	static function cb_tick( #if ( nme || flash ) ?_ #end ) : Void	{
 		for ( i in _aTweens )
 			i.doInterval();
 	}
@@ -263,11 +291,16 @@ class Tween{
 	*/
 	
 	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?endF : Void->Void, autoStart = false ) {
-		if ( _timer == null )
+		if ( !_isTweening )
 		{
-			_timer = new haxe.Timer( INTERVAL ) ;
-			_timer.run = DispatchTweens;
-			DispatchTweens();
+			#if ( !nme && js )
+				_timer 		= new haxe.Timer( INTERVAL ) ;
+				_timer.run 	= cb_tick;
+			#else
+				Lib.current.stage.addEventListener( Event.ENTER_FRAME, cb_tick );
+			#end
+			_isTweening	= true;
+			cb_tick();
 		}
 		
 		_initVal = init;
@@ -301,7 +334,7 @@ class Tween{
 		_reverseTime = getStamp();
 		
 		if ( duration == 0 )
-			endTween();
+			finish();
 		else
 			Tween.AddTween( this );
 		isPlaying = true;
@@ -346,6 +379,20 @@ class Tween{
 		isPlaying = false;
 	}
 	
+	function finish() : Void {
+		RemoveTween( this );
+		var val = 0.0;
+		isPlaying = false;
+		if ( reversed )
+			val = _initVal;
+		else
+			val = _endVal;
+		
+		updateF( val );
+		endF();
+	}
+
+	
 	public function onUpdate( f : Float -> Void ) {
 		updateF = f;
 		return this;
@@ -380,7 +427,7 @@ class Tween{
 		
 		var curVal = getCurVal( curTime );
 		if ( curTime >= duration || curTime < 0 )
-			endTween();
+			finish();
 		else{
 			updateF( curVal );
 		}
@@ -401,19 +448,6 @@ class Tween{
 		#elseif flash
 			return flash.Lib.getTimer();
 		#end
-	}
-
-	function endTween() : Void {
-		RemoveTween( this );
-		var val = 0.0;
-		isPlaying = false;
-		if ( reversed )
-			val = _initVal;
-		else
-			val = _endVal;
-		
-		updateF( val );
-		endF();
 	}
 
 	static inline function easingEquation( t : Float, b : Float, c : Float, d : Float ) : Float {
