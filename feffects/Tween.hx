@@ -229,6 +229,19 @@ class Tween{
 	var _easingF		: Easing;
 	
 	static function AddTween( tween : Tween ) : Void {
+		
+		if ( !_isTweening )
+		{
+			#if ( !nme && js )
+				_timer 		= new haxe.Timer( INTERVAL ) ;
+				_timer.run 	= cb_tick;
+			#else
+				Lib.current.stage.addEventListener( Event.ENTER_FRAME, cb_tick );
+			#end
+			_isTweening	= true;
+			cb_tick();
+		}
+		
 		_aTweens.add( tween );
 	}
 
@@ -239,11 +252,11 @@ class Tween{
 		if ( _aTweens.isEmpty() && _aPaused.isEmpty() )	{
 			#if ( !nme && js )
 				_timer.stop() ;
-				_timer		= null ;
-				_isTweening = false;
+				_timer	= null ;
 			#else
 				Lib.current.stage.removeEventListener( Event.ENTER_FRAME, cb_tick );
 			#end
+			_isTweening = false;
 		}
 	}
 	
@@ -282,18 +295,7 @@ class Tween{
 	*/
 	
 	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?endF : Void->Void, autoStart = false ) {
-		if ( !_isTweening )
-		{
-			#if ( !nme && js )
-				_timer 		= new haxe.Timer( INTERVAL ) ;
-				_timer.run 	= cb_tick;
-			#else
-				Lib.current.stage.addEventListener( Event.ENTER_FRAME, cb_tick );
-			#end
-			_isTweening	= true;
-			cb_tick();
-		}
-		
+				
 		_initVal = init;
 		_endVal = end;
 		duration = dur;
