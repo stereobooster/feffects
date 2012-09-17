@@ -245,16 +245,6 @@ class Tween{
 				Lib.current.stage.removeEventListener( Event.ENTER_FRAME, cb_tick );
 			#end
 		}
-		
-	}
-	
-	public static function pauseAllTweens() {
-		Lib.current.stage.removeEventListener( Event.ENTER_FRAME, cb_tick );
-	}
-	
-	public function resumeAllTweens() {
-		if ( !_aTweens.isEmpty() )
-			Lib.current.stage.addEventListener( Event.ENTER_FRAME, cb_tick );
 	}
 	
 	public static function getActiveTweens() : FastList<Tween> {
