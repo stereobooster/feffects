@@ -44,6 +44,13 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 * 
 */
 
+/*class TweenProperty {
+	
+	public function new( target : Dynamic, prop : Dynamic, duration : Int, easing : Easing ) {
+		//_target = target;
+	}
+}*/
+
 class TweenObject {
 	
 	public var tweens		(default, null)			: FastList<Tween>;
@@ -59,6 +66,8 @@ class TweenObject {
 		return false;
 	}
 	
+	var _onFinish	: Void->Void;
+	
 	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
 		return new TweenObject( target, properties, duration, easing, onFinish, autoStart );
 	}
@@ -67,33 +76,33 @@ class TweenObject {
 		this.target		= target;
 		this.properties	= properties;
 		this.duration	= duration;
+		this.easing 	= easing;
 		
-		if ( easing != null )
-			this.easing = easing;
-		if( onFinish != null )
-			endF = onFinish;
-		
-		tweens		= new FastList<Tween>();
-		for ( key in Reflect.fields( properties ) ) {
-			var prop = { };
-			Reflect.setProperty( prop, key, Reflect.getProperty( properties, key ) );
-			var tweenProp = new TweenProperty( target, prop, duration, easing, _endF );
-			tweens.add( tweenProp );
-		}
+		_onFinish 		= onFinish;
 		
 		if ( autoStart )
+		{
 			start();
+			stop();
+		}
 	}
 	
-	public function setEasing( easing : Easing ) {
+	public function setEasing( easing : Easing ) : TweenObject {
 		for ( tweenProp in tweens )
 			tweenProp.setEasing( easing );
 		return this;
 	}
 	
-	public function start() {
-		for ( tweenProp in tweens )
+	public function start() : FastList<Tween>{
+		tweens		= new FastList<Tween>();
+		for ( key in Reflect.fields( properties ) ) {
+			var prop = { };
+			Reflect.setProperty( prop, key, Reflect.getProperty( properties, key ) );
+			var tweenProp = new TweenProperty( target, prop, duration, easing, _endF );
 			tweenProp.start();
+			tweens.add( tweenProp );
+		}
+		
 		return tweens;
 	}
 	
@@ -107,12 +116,13 @@ class TweenObject {
 			tweenProp.resume();
 	}
 	
-	public function seek( n : Int ) {
+	public function seek( n : Int ) : TweenObject {
 		for ( tweenProp in tweens )
 			tweenProp.seek( n );
+		return this;
 	}
 	
-	public function reverse() {
+	public function reverse(){
 		for ( tweenProp in tweens )
 			tweenProp.reverse();
 	}
@@ -122,17 +132,18 @@ class TweenObject {
 			tweenProp.stop();
 	}
 	
-	public function onFinish( f : Void->Void ) {
-		endF = f;
+	public function onFinish( f : Void->Void ) : TweenObject {
+		_onFinish = f;
 		return this;
 	}
 		
-	dynamic function endF() {}
-		
 	function _endF( tp : TweenProperty ) {
 		tweens.remove( tp );
-		if ( tweens.isEmpty() )			
-			endF();
+		if ( tweens.isEmpty() )
+		{
+			if ( _onFinish != null )
+				_onFinish();
+		}
 	}
 }
 
@@ -140,28 +151,29 @@ private class TweenProperty extends Tween{
 	
 	var _target		: Dynamic;
 	var _property	: String;
-	var __endF		: TweenProperty->Void;
+	var _onFinish	: TweenProperty->Void;
 	
-	public function new( target : Dynamic, prop : Dynamic, duration : Int, ?easing : Easing, endF : TweenProperty->Void ) {
-		_target = target;
-		_property = Reflect.fields( prop )[ 0 ];
-		__endF = endF;
+	public function new( target : Dynamic, prop : Dynamic, duration : Int, ?easing : Easing, finishF : TweenProperty->Void ) {
+		_target		= target;
+		_property	= Reflect.fields( prop )[ 0 ];
+		_onFinish	= finishF;
 		
-		var init = Reflect.getProperty( target, _property );
-		var end = Reflect.getProperty( prop, _property );
+		var init	= Reflect.getProperty( target, _property );
+		var end		= Reflect.getProperty( prop, _property );
 		
 		super( init, end, duration, easing );
 		
-		onUpdate( _updateF );
-		onFinish( _endF );
+		_updateF	= __updateF;
+		_finishF	= __finishF;
 	}
 	
-	inline function _updateF( n : Float ) {
+	function __updateF( n : Float ) {
 		Reflect.setProperty( _target, _property, n );
 	}
 	
-	inline function _endF() {
-		__endF( this );
+	function __finishF() {
+		if ( _onFinish != null )
+			_onFinish( this );
 	}
 }
 
@@ -212,10 +224,11 @@ class Tween{
 	
 	public static var DEFAULT_EASING	= easingEquation;
 			
-	public var duration	(default, null): Int;
-	public var position	(default, null): Int;
-	public var reversed	(default, null): Bool;
-	public var isPlaying(default, null): Bool;
+	public var duration		(default, null) : Int;
+	public var position		(default, null) : Int;
+	public var isReversed	(default, null) : Bool;
+	public var isPlaying	(default, null) : Bool;
+	public var isPaused		(default, null) : Bool;
 	
 	static var _isTweening	: Bool;
 			
@@ -227,6 +240,8 @@ class Tween{
 	var _reverseTime	: Float;
 	
 	var _easingF		: Easing;
+	var _updateF		: Float->Void;
+	var _finishF		: Void->Void;
 	
 	static function AddTween( tween : Tween ) : Void {
 		
@@ -245,14 +260,25 @@ class Tween{
 		_aTweens.add( tween );
 	}
 
-	static function RemoveTween( tween : Tween ) : Void {
-		if ( !_isTweening )
-			return;
+	static function RemoveActiveTween( tween : Tween ) : Void {
 		_aTweens.remove( tween );
-		if ( _aTweens.isEmpty() && _aPaused.isEmpty() )	{
+		checkActiveTweens();
+	}
+	
+	static function RemovePausedTween( tween : Tween ) : Void {
+		_aPaused.remove( tween );
+		checkActiveTweens();
+	}
+	
+	static function checkActiveTweens() {
+		if ( _aTweens.isEmpty() )
+		{
 			#if ( !nme && js )
-				_timer.stop() ;
-				_timer	= null ;
+				if ( _timer != null )
+				{
+					_timer.stop() ;
+					_timer	= null ;
+				}
 			#else
 				Lib.current.stage.removeEventListener( Event.ENTER_FRAME, cb_tick );
 			#end
@@ -269,19 +295,33 @@ class Tween{
 	}
 	
 	static function setTweenPaused( tween : Tween ) : Void {
-		if ( !_isTweening )
+		if ( !tween.isPlaying )
 			return;
 					
 		_aPaused.add( tween );
 		_aTweens.remove( tween );
+		
+		checkActiveTweens();
 	}
 	
 	static function setTweenActive( tween : Tween ) : Void {
-		if ( !_isTweening )
+		if ( tween.isPlaying )
 			return;
 					
 		_aTweens.add( tween );
 		_aPaused.remove( tween );
+		
+		if ( !_isTweening )
+		{
+			#if ( !nme && js )
+				_timer 		= new haxe.Timer( INTERVAL ) ;
+				_timer.run 	= cb_tick;
+			#else
+				Lib.current.stage.addEventListener( Event.ENTER_FRAME, cb_tick );
+			#end
+			_isTweening	= true;
+			cb_tick();
+		}
 	}
 
 	static function cb_tick( #if ( nme || flash ) ?_ #end ) : Void	{
@@ -294,105 +334,120 @@ class Tween{
 	* There is a default easing equation.
 	*/
 	
-	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?endF : Void->Void, autoStart = false ) {
+	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?finishF : Void->Void, autoStart = false ) {
 				
-		_initVal = init;
-		_endVal = end;
-		duration = dur;
+		_initVal	= init;
+		_endVal		= end;
+		duration	= dur;
+		_updateF	= updateF;
+		_finishF	= finishF;
 		
 		_offsetTime = 0;
-		position = 0;
-		reversed = false;
+		position	= 0;
+		isPlaying	= false;
+		isPaused	= false;
+		isReversed	= false;
 		
 		if ( easing != null )
 			_easingF = easing;
 		else
 			_easingF = easingEquation;
 			
-		if ( updateF != null )
-			this.updateF = updateF;
-			
-		if ( endF != null )
-			this.endF = endF;
-			
-		isPlaying = false;
-		
 		if ( autoStart )
 			start();
 	}
 	
-	public function start() : Void {
+	public function start( position = 0 ) : Void {
 		
-		_startTime = getStamp();
-		_reverseTime = getStamp();
+		_startTime		= getStamp();
+		_reverseTime	= getStamp();
 		
-		if ( duration == 0 )
-			finish();
-		else
-			Tween.AddTween( this );
+		seek( position );
+		
+		if ( isPaused )
+			RemovePausedTween( this );
+		
+		Tween.AddTween( this );
 		isPlaying = true;
+		
+		if ( duration == 0 || position >= duration )
+			finish();
 	}
 	
 	public function pause() : Void {
-		_pauseTime = getStamp();
+		if ( !isPlaying )
+			return;
+			
+		_pauseTime	= getStamp();
 		
 		Tween.setTweenPaused( this );
-		isPlaying = false;
+		isPlaying	= false;
+		isPaused	= true;
 	}
 	
 	public function resume() : Void {
-		_startTime += getStamp() - _pauseTime;
-		_reverseTime += getStamp() - _pauseTime;
+		if ( !isPaused || isPlaying )
+			return;
+		
+		_startTime		+= getStamp() - _pauseTime;
+		_reverseTime 	+= getStamp() - _pauseTime;
 				
 		Tween.setTweenActive( this );
-		isPlaying = true;
+		isPlaying	= true;
+		isPaused	= true;
 	}
 	
 	/**
 	* Go to the specified position [ms] (in ms) 
 	*/
 	public function seek( ms : Int ) : Tween {
-		_offsetTime = ms;
+		_offsetTime = ms < duration ? ms : duration;
 		return this;
 	}
 		
 	/**
 	* Reverse the tweeen from the current position 
 	*/
-	public function reverse() : Void {
-		reversed = !reversed;
-		if ( !reversed )
+	public function reverse() {
+		if ( !isPlaying )
+			return;
+		
+		isReversed = !isReversed;
+		if ( !isReversed )
 			_startTime += ( getStamp() - _reverseTime ) * 2;
 
 		_reverseTime = getStamp();
 	}
 	
 	public function stop() : Void {
-		Tween.RemoveTween( this );
+		if( isPaused )
+			RemovePausedTween( this );
+		else
+			if( isPlaying )
+				RemoveActiveTween( this );
+				
 		isPlaying = false;
 	}
 	
 	function finish() : Void {
-		RemoveTween( this );
-		var val = 0.0;
+		RemoveActiveTween( this );
 		isPlaying = false;
-		if ( reversed )
-			val = _initVal;
-		else
-			val = _endVal;
+		var val = isReversed ? _initVal : _endVal;
 		
-		updateF( val );
-		endF();
+		if( _updateF != null )
+			_updateF( val );
+		if( _finishF != null )
+			_finishF();
 	}
 
 	
 	public function onUpdate( f : Float -> Void ) {
-		updateF = f;
+		_updateF = f;
 		return this;
 	}
 	
 	public function onFinish( f : Void -> Void ) {
-		endF = f;
+		_finishF = f;
 		return this;
 	}
 	
@@ -404,15 +459,12 @@ class Tween{
 		return this;
 	}
 	
-	dynamic function updateF( e : Float ) { }
-	dynamic function endF() { }
-	
 	inline function doInterval() : Void {
 		var stamp = getStamp();
 				
 		var curTime = 0;
 		untyped{
-		if ( reversed )
+		if ( isReversed )
 			curTime = ( _reverseTime * 2 ) - stamp - _startTime + _offsetTime;
 		else
 			curTime = stamp - _startTime + _offsetTime;
@@ -421,10 +473,11 @@ class Tween{
 		var curVal = getCurVal( curTime );
 		if ( curTime >= duration || curTime < 0 )
 			finish();
-		else{
-			updateF( curVal );
+		else {
+			if( _updateF != null )
+				_updateF( curVal );
 		}
-		position = curTime;						
+		position = curTime;		
 	}
 	
 	inline function getCurVal( curTime : Int ) : Float {

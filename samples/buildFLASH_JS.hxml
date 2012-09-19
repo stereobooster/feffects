@@ -1,15 +1,10 @@
-# swf
+# flash
 -swf export/flash/flash.swf
--main Main
--lib feffects
-
---next
-
-# swf9
--swf export/flash/flash9+.swf
+-swf-header 600:800:30:FFFFFF
 -swf-version 9
 -main Main
 -lib feffects
+-debug
 
 --next
 
