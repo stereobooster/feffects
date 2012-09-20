@@ -81,10 +81,7 @@ class TweenObject {
 		_onFinish 		= onFinish;
 		
 		if ( autoStart )
-		{
 			start();
-			stop();
-		}
 	}
 	
 	public function setEasing( easing : Easing ) : TweenObject {
