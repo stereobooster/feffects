@@ -1,0 +1,22 @@
+# flash8
+-swf export/flash/flash8.swf
+-swf-header 600:800:30:FFFFFF
+-swf-version 8
+-main Main
+-lib feffects
+
+--next
+
+# flash9+
+-swf export/flash/flash9+.swf
+-swf-header 600:800:30:FFFFFF
+-swf-version 9
+-main Main
+-lib feffects
+
+--next
+
+# js
+-js export/js/js.js
+-main Main
+-lib feffects

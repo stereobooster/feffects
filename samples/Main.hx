@@ -17,7 +17,7 @@ import feffects.easing.Quart;
 #elseif flash8
 	import flash.MovieClip;
 	import flash.Lib;
-#elseif js
+#elseif (js && !nme)
 	import js.Dom;
 	import js.Lib;
 #elseif nme
@@ -28,7 +28,7 @@ import feffects.easing.Quart;
 using feffects.Tween.TweenObject;
 
 class Main {
-	function new() {
+	public function new() {
 		var effects = 
 		[ 
 			Quint.easeIn, Quint.easeOut, Quint.easeInOut,
@@ -45,41 +45,47 @@ class Main {
 		];
 		
 		var i = 0;
+		var sprite	= null;
+		var gfx		= null;
+		var t		= null;
 		while ( i < effects.length ) {
 			#if (flash9||nme)
-				var sprite = new MovieClip();
+				sprite = new MovieClip();
 				sprite.x = i * 10 + 30;
-				var gfx = sprite.graphics;
+				gfx = sprite.graphics;
 				gfx.beginFill( 0x000000, 1 );
 				Lib.current.addChild( sprite );
-			#elseif flash
-				var sprite = Lib.current.createEmptyMovieClip( "sprite" + i, i );
-				sprite._x = i * 10 + 30;
-				var gfx = sprite;
-				gfx.beginFill( 0x000000, 100 );
-			#end
-			#if (flash||nme)
-				gfx.lineTo( 10, 0 );
-				gfx.lineTo( 10, 10 );
-				gfx.lineTo( 0, 10 );
-				gfx.lineTo( 0, 0 );
-				gfx.endFill();
-				
-				var t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
-				
-			// special js treatment
 			#elseif js
+				// new local var sprite needed...js bug ???
 				var sprite = js.Lib.document.createElement( "div" );
 				Lib.document.body.appendChild( sprite );
 				sprite.style.position = "absolute";
 				sprite.style.backgroundColor = "#000000";
 				sprite.style.padding = "5px";
 				sprite.style.left = i * 10 + 30 + "px";
-				
-				var t = new Tween( 50, 150, 2000, effects[ i ] );
-				t.onUpdate( function ( e ) sprite.style.top = e + "px" );
+			#elseif flash8
+				sprite = Lib.current.createEmptyMovieClip( "sprite" + i, i );
+				sprite._x = i * 10 + 30;
+				gfx = sprite;
+				gfx.beginFill( 0x000000, 100 );
 			#end
 			
+			#if (flash||nme)
+				gfx.lineTo( 10, 0 );
+				gfx.lineTo( 10, 10 );
+				gfx.lineTo( 0, 10 );
+				gfx.lineTo( 0, 0 );
+				gfx.endFill();
+				#if flash8
+					t = sprite.tween( { _y : 150 }, 2000, effects[ i ] );
+				#else
+					t = sprite.tween( { y : 150 }, 2000, effects[ i ] );
+				#end
+			#elseif js
+				t = new Tween( 50, 150, 2000, effects[ i ] );
+				t.onUpdate( function ( e ) sprite.style.top = e + "px" );
+			#end
+				
 			t.start();
 			t.seek( 350 );
 									

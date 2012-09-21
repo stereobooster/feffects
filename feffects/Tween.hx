@@ -5,7 +5,7 @@ import haxe.FastList;
 #if nme
 	import nme.Lib;
 	import nme.events.Event;
-#elseif flash
+#elseif flash9
 	import flash.Lib;
 	import flash.events.Event;
 #elseif js
@@ -44,16 +44,9 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 * 
 */
 
-/*class TweenProperty {
-	
-	public function new( target : Dynamic, prop : Dynamic, duration : Int, easing : Easing ) {
-		//_target = target;
-	}
-}*/
-
 class TweenObject {
 	
-	public var tweens		(default, null)			: FastList<Tween>;
+	public var tweens		(default, null)			: List<Tween>;
 	public var target		(default, null)			: Dynamic;
 	public var properties	(default, null)			: Dynamic;
 	public var duration		(default, null)			: Int;
@@ -90,15 +83,10 @@ class TweenObject {
 		return this;
 	}
 	
-	public function start() : FastList<Tween>{
-		tweens		= new FastList<Tween>();
-		for ( key in Reflect.fields( properties ) ) {
-			var prop = { };
-			Reflect.setProperty( prop, key, Reflect.getProperty( properties, key ) );
-			var tweenProp = new TweenProperty( target, prop, duration, easing, _endF );
-			tweenProp.start();
-			tweens.add( tweenProp );
-		}
+	public function start() : List<Tween>{
+		tweens	= new List<Tween>();
+		for ( key in Reflect.fields( properties ) )
+			tweens.add( new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, _endF, true ) );
 		
 		return tweens;
 	}
@@ -137,10 +125,8 @@ class TweenObject {
 	function _endF( tp : TweenProperty ) {
 		tweens.remove( tp );
 		if ( tweens.isEmpty() )
-		{
 			if ( _onFinish != null )
 				_onFinish();
-		}
 	}
 }
 
@@ -150,18 +136,12 @@ private class TweenProperty extends Tween{
 	var _property	: String;
 	var _onFinish	: TweenProperty->Void;
 	
-	public function new( target : Dynamic, prop : Dynamic, duration : Int, ?easing : Easing, finishF : TweenProperty->Void ) {
+	public function new( target : Dynamic, prop : String, value : Float, duration : Int, ?easing : Easing, finishF : TweenProperty->Void, autoStart = false ) {
 		_target		= target;
-		_property	= Reflect.fields( prop )[ 0 ];
+		_property	= prop;
 		_onFinish	= finishF;
 		
-		var init	= Reflect.getProperty( target, _property );
-		var end		= Reflect.getProperty( prop, _property );
-		
-		super( init, end, duration, easing );
-		
-		_updateF	= __updateF;
-		_finishF	= __finishF;
+		super( Reflect.getProperty( target, _property ), value, duration, easing, __updateF,  __finishF, autoStart );
 	}
 	
 	function __updateF( n : Float ) {
@@ -210,11 +190,11 @@ private class TweenProperty extends Tween{
 * 
 */
 
-class Tween{
+class Tween {
 	static var _aTweens	= new FastList<Tween>();
 	static var _aPaused	= new FastList<Tween>();
 	
-	#if ( !nme && js )
+	#if ( !nme && js || flash8 )
 		static var _timer	: haxe.Timer;
 		public static var INTERVAL		= 10;
 	#end
@@ -241,10 +221,9 @@ class Tween{
 	var _finishF		: Void->Void;
 	
 	static function AddTween( tween : Tween ) : Void {
-		
 		if ( !_isTweening )
 		{
-			#if ( !nme && js )
+			#if ( !nme && js || flash8 )
 				_timer 		= new haxe.Timer( INTERVAL ) ;
 				_timer.run 	= cb_tick;
 			#else
@@ -270,7 +249,7 @@ class Tween{
 	static function checkActiveTweens() {
 		if ( _aTweens.isEmpty() )
 		{
-			#if ( !nme && js )
+			#if ( !nme && js || flash8 )
 				if ( _timer != null )
 				{
 					_timer.stop() ;
@@ -283,11 +262,11 @@ class Tween{
 		}
 	}
 	
-	public static function getActiveTweens() : FastList<Tween> {
+	public static function getActiveTweens() {
 		return _aTweens;
 	}
 	
-	public static function getPausedTweens() : FastList<Tween> {
+	public static function getPausedTweens() {
 		return _aPaused;
 	}
 	
@@ -310,7 +289,7 @@ class Tween{
 		
 		if ( !_isTweening )
 		{
-			#if ( !nme && js )
+			#if ( !nme && js || flash8 )
 				_timer 		= new haxe.Timer( INTERVAL ) ;
 				_timer.run 	= cb_tick;
 			#else
@@ -321,7 +300,7 @@ class Tween{
 		}
 	}
 
-	static function cb_tick( #if ( nme || flash ) ?_ #end ) : Void	{
+	static function cb_tick( #if ( nme || flash9 ) ?_ #end ) : Void	{
 		for ( i in _aTweens )
 			i.doInterval();
 	}
@@ -423,6 +402,7 @@ class Tween{
 			if( isPlaying )
 				RemoveActiveTween( this );
 				
+		isPaused = false;
 		isPlaying = false;
 	}
 	
@@ -456,7 +436,7 @@ class Tween{
 		return this;
 	}
 	
-	inline function doInterval() : Void {
+	function doInterval() : Void {
 		var stamp = getStamp();
 				
 		var curTime = 0;
