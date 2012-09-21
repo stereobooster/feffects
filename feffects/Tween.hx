@@ -59,19 +59,20 @@ class TweenObject {
 		return false;
 	}
 	
-	var _onFinish	: Void->Void;
+	var __onFinish			: Dynamic;
+	var __onFinishParams	: Array<Dynamic>;
 	
-	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
-		return new TweenObject( target, properties, duration, easing, onFinish, autoStart );
+	public static function tween( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, autoStart = false, ?onFinish : Dynamic, ?onFinishParams : Array<Dynamic> ) {
+		return new TweenObject( target, properties, duration, easing, autoStart, onFinish, onFinishParams );
 	}
 	
-	public function new( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, ?onFinish : Void->Void, autoStart = false ) {
-		this.target		= target;
-		this.properties	= properties;
-		this.duration	= duration;
-		this.easing 	= easing;
+	public function new( target : Dynamic, properties : Dynamic, duration : Int, ?easing : Easing, autoStart = false, ?onFinish : Dynamic, ?onFinishParams : Array<Dynamic> ) {
+		this.target			= target;
+		this.properties		= properties;
+		this.duration		= duration;
+		this.easing 		= easing;
 		
-		_onFinish 		= onFinish;
+		this.onFinish( onFinish, onFinishParams );
 		
 		if ( autoStart )
 			start();
@@ -85,9 +86,12 @@ class TweenObject {
 	
 	public function start() : List<Tween>{
 		tweens	= new List<Tween>();
-		for ( key in Reflect.fields( properties ) )
-			tweens.add( new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, _endF, true ) );
-		
+		for ( key in Reflect.fields( properties ) ) {
+			var tp = new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, false );
+			tp.onFinish( _onFinish, [ tp ] ).start();
+			tweens.add( tp );
+		}
+				
 		return tweens;
 	}
 	
@@ -112,45 +116,49 @@ class TweenObject {
 			tweenProp.reverse();
 	}
 	
-	public function stop() {
+	public function stop( ?finish : Bool ) {
 		for ( tweenProp in tweens )
-			tweenProp.stop();
+			tweenProp.stop( finish );
 	}
 	
-	public function onFinish( f : Void->Void ) : TweenObject {
-		_onFinish = f;
+	public function onFinish( f : Dynamic, ?params : Array<Dynamic> ) : TweenObject {
+		__onFinish 			= f;
+		__onFinishParams	= params == null ? [] : params;
 		return this;
 	}
 		
-	function _endF( tp : TweenProperty ) {
+	function _onFinish( tp : TweenProperty ) {
 		tweens.remove( tp );
 		if ( tweens.isEmpty() )
-			if ( _onFinish != null )
-				_onFinish();
+			if ( __onFinish != null )
+				Reflect.callMethod( null, __onFinish, __onFinishParams );
 	}
 }
 
-private class TweenProperty extends Tween{
+class TweenProperty extends Tween{
 	
-	var _target		: Dynamic;
-	var _property	: String;
-	var _onFinish	: TweenProperty->Void;
+	var _target				: Dynamic;
+	var _property			: String;
+	var ___onUpdate			: Dynamic;
+	var ___onUpdateParams	: Array<Dynamic>;
 	
-	public function new( target : Dynamic, prop : String, value : Float, duration : Int, ?easing : Easing, finishF : TweenProperty->Void, autoStart = false ) {
-		_target		= target;
-		_property	= prop;
-		_onFinish	= finishF;
+	public function new( target : Dynamic, prop : String, value : Float, duration : Int, ?easing : Easing, autostart = false, ?onUpdate : Dynamic, ?onUpdateParams : Array<Dynamic>, ?onFinish : Dynamic, ?onFinishParams : Array<Dynamic> ) {
+		_target					= target;
+		_property				= prop;
+		___onUpdateParams		= [ 0 ];
+		if( onUpdateParams != null )
+			___onUpdateParams	= ___onUpdateParams.concat( onUpdateParams );
 		
-		super( Reflect.getProperty( target, _property ), value, duration, easing, __updateF,  __finishF, autoStart );
+		super( Reflect.getProperty( target, _property ), value, duration, easing, autostart, __onUpdate, onFinish, onFinishParams );
 	}
 	
-	function __updateF( n : Float ) {
+	function __onUpdate( n : Float ) {
 		Reflect.setProperty( _target, _property, n );
-	}
-	
-	function __finishF() {
-		if ( _onFinish != null )
-			_onFinish( this );
+		if ( ___onUpdate != null )
+		{
+			___onUpdateParams[ 0 ]	= n;
+			Reflect.callMethod( null, ___onUpdate, ___onUpdateParams );
+		}
 	}
 }
 
@@ -217,8 +225,10 @@ class Tween {
 	var _reverseTime	: Float;
 	
 	var _easingF		: Easing;
-	var _updateF		: Float->Void;
-	var _finishF		: Void->Void;
+	var _onUpdate		: Dynamic;
+	var _onFinish		: Dynamic;
+	var _onUpdateParams	: Array<Dynamic>;
+	var _onFinishParams	: Array<Dynamic>;
 	
 	static function AddTween( tween : Tween ) : Void {
 		if ( !_isTweening )
@@ -310,19 +320,20 @@ class Tween {
 	* There is a default easing equation.
 	*/
 	
-	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, ?updateF : Float->Void, ?finishF : Void->Void, autoStart = false ) {
+	public function new( init : Float, end : Float, dur : Int, ?easing : Easing, autoStart = false, ?onUpdate : Dynamic, ?onUpdateParams : Array<Dynamic>, ?onFinish : Dynamic, ?onFinishParams : Array<Dynamic> ) {
 				
-		_initVal	= init;
-		_endVal		= end;
-		duration	= dur;
-		_updateF	= updateF;
-		_finishF	= finishF;
+		_initVal		= init;
+		_endVal			= end;
+		duration		= dur;
 		
-		_offsetTime = 0;
-		position	= 0;
-		isPlaying	= false;
-		isPaused	= false;
-		isReversed	= false;
+		this.onUpdate( onUpdate, onUpdateParams ); 
+		this.onFinish( onFinish, onFinishParams );
+		
+		_offsetTime 	= 0;
+		position		= 0;
+		isPlaying		= false;
+		isPaused		= false;
+		isReversed		= false;
 		
 		if ( easing != null )
 			_easingF = easing;
@@ -395,36 +406,44 @@ class Tween {
 		_reverseTime = getStamp();
 	}
 	
-	public function stop() : Void {
+	public function stop( ?doFinish : Bool ) : Void {
 		if( isPaused )
 			RemovePausedTween( this );
 		else
 			if( isPlaying )
 				RemoveActiveTween( this );
 				
-		isPaused = false;
-		isPlaying = false;
+		if ( doFinish )
+			finish();		
+		
+		isPaused	= false;
+		isPlaying	= false;
 	}
 	
 	function finish() : Void {
 		RemoveActiveTween( this );
-		isPlaying = false;
-		var val = isReversed ? _initVal : _endVal;
+		isPlaying				= false;
+		_onUpdateParams[ 0 ]	= isReversed ? _initVal : _endVal;
 		
-		if( _updateF != null )
-			_updateF( val );
-		if( _finishF != null )
-			_finishF();
+		if( _onUpdate != null )
+			Reflect.callMethod( null, _onUpdate, _onUpdateParams );
+		if( _onFinish != null )
+			Reflect.callMethod( null, _onFinish, _onFinishParams );
 	}
 
 	
-	public function onUpdate( f : Float -> Void ) {
-		_updateF = f;
+	public function onUpdate( f : Dynamic, ?params : Array<Dynamic> ) {
+		_onUpdate		= f;
+		_onUpdateParams	= [ 0 ];
+		if ( params != null )
+			_onUpdateParams = _onUpdateParams.concat( params );
+					
 		return this;
 	}
 	
-	public function onFinish( f : Void -> Void ) {
-		_finishF = f;
+	public function onFinish( f : Dynamic, ?params : Array<Dynamic> ) {
+		_onFinish 		= f;
+		_onFinishParams	= params == null ? [] : params;
 		return this;
 	}
 	
@@ -451,8 +470,11 @@ class Tween {
 		if ( curTime >= duration || curTime < 0 )
 			finish();
 		else {
-			if( _updateF != null )
-				_updateF( curVal );
+			if ( _onUpdate != null )
+			{
+				_onUpdateParams[ 0 ] = curVal;
+				Reflect.callMethod( null, _onUpdate, _onUpdateParams );
+			}
 		}
 		position = curTime;		
 	}
