@@ -46,7 +46,7 @@ typedef Easing = Float -> Float -> Float -> Float -> Float
 
 class TweenObject {
 	
-	public var tweens		(default, null)			: List<Tween>;
+	public var tweens		(default, null)			: List<TweenProperty>;
 	public var target		(default, null)			: Dynamic;
 	public var properties	(default, null)			: Dynamic;
 	public var duration		(default, null)			: Int;
@@ -84,8 +84,8 @@ class TweenObject {
 		return this;
 	}
 	
-	public function start() : List<Tween>{
-		tweens	= new List<Tween>();
+	public function start() : List<TweenProperty>{
+		tweens	= new List<TweenProperty>();
 		for ( key in Reflect.fields( properties ) ) {
 			var tp = new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, false );
 			tp.onFinish( _onFinish, [ tp ] ).start();
@@ -137,23 +137,24 @@ class TweenObject {
 
 class TweenProperty extends Tween{
 	
-	var _target				: Dynamic;
-	var _property			: String;
+	public var  target		(default,null)	: Dynamic;
+	public var property		(default, null)	: String;
+	
 	var ___onUpdate			: Dynamic;
 	var ___onUpdateParams	: Array<Dynamic>;
 	
 	public function new( target : Dynamic, prop : String, value : Float, duration : Int, ?easing : Easing, autostart = false, ?onUpdate : Dynamic, ?onUpdateParams : Array<Dynamic>, ?onFinish : Dynamic, ?onFinishParams : Array<Dynamic> ) {
-		_target					= target;
-		_property				= prop;
-		___onUpdateParams		= [ 0 ];
+		this.target			= target;
+		this.property		= prop;
+		___onUpdateParams	= [ 0 ];
 		if( onUpdateParams != null )
 			___onUpdateParams	= ___onUpdateParams.concat( onUpdateParams );
 		
-		super( Reflect.getProperty( target, _property ), value, duration, easing, autostart, __onUpdate, onFinish, onFinishParams );
+		super( Reflect.getProperty( target, property ), value, duration, easing, autostart, __onUpdate, onFinish, onFinishParams );
 	}
 	
 	function __onUpdate( n : Float ) {
-		Reflect.setProperty( _target, _property, n );
+		Reflect.setProperty( target, property, n );
 		if ( ___onUpdate != null )
 		{
 			___onUpdateParams[ 0 ]	= n;
