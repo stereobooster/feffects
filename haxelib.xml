@@ -9,5 +9,5 @@
     <tag v="cpp"/>
     <tag v="nme"/>
     <description>Set of effects (tweens, sineloops...) targeting Flash / JS / NME (Neko, C++, Windows, Linux, OSX, Android, iOS, webOS, BlackBerry, HTML5)</description>
-    <version name="1.3.3">1.3.3 : Based on ENTER_FRAME instead of Timer on NME & Flash</version>
+    <version name="1.4.0">1.4.0 : Haxe 3 Ready + speedup</version>
 </project>

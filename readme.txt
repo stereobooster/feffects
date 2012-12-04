@@ -1,3 +1,4 @@
+1.4.0 : Haxe 3 Ready + speedup
 1.3.3 : Based on ENTER_FRAME instead of Timer on NME & Flash
 1.3.2 : Start tween bug fixed + synthax added
 1.3.1 : Haxe 2.10 compatible (fields/properies fixed)
