@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Elastic implements haxe.Public {
+@:publicFields class Elastic #if !haxe3 implements haxe.Public #end {
 	inline static function easeIn ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		if ( t == 0 ) {
 			return b;

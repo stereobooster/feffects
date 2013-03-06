@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Sine implements haxe.Public {
+@:publicFields class Sine #if !haxe3 implements haxe.Public #end {
 	inline static function easeIn ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		return -c * Math.cos ( t / d * ( Math.PI * 0.5 ) ) + c + b;
 	}

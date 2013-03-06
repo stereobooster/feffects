@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Bounce implements haxe.Public {
+@:publicFields class Bounce #if !haxe3 implements haxe.Public #end {
 	inline static function easeOut ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		if ( ( t /= d ) < ( 1 / 2.75 ) )
 			return c * ( 7.5625 * t * t ) + b;

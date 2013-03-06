@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Back implements haxe.Public {
+@:publicFields class Back #if !haxe3 implements haxe.Public #end {
 	inline static function easeIn ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		return c * ( t /= d ) * t * ( ( 1.70158 + 1 ) * t - 1.70158 ) + b;
 	}

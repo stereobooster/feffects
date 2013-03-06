@@ -1,6 +1,10 @@
 ﻿package feffects;
 
-import haxe.FastList;
+#if haxe3
+	import haxe.ds.GenericStack;
+#else
+	import haxe.FastList;
+#end
 
 #if nme
 	import nme.Lib;
@@ -46,7 +50,7 @@ typedef Easing = Float->Float->Float->Float->Float;
 
 class TweenObject {
 	
-	public var tweens		(default, null)			: FastList<TweenProperty>;
+	public var tweens		(default, null)			: #if haxe3 GenericStack<TweenProperty>; #else FastList<TweenProperty>; #end
 	public var target		(default, null)			: Dynamic;
 	public var properties	(default, null)			: Dynamic;
 	public var duration		(default, null)			: Int;
@@ -76,7 +80,7 @@ class TweenObject {
 				
 		this.onFinish( onFinish );
 		
-		tweens		= new FastList<TweenProperty>();
+		tweens		= new #if haxe3 GenericStack<TweenProperty>(); #else FastList<TweenProperty>(); #end
 		_nbTotal	= 0;
 		for ( key in Reflect.fields( properties ) ) {
 			var tp = new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, false );
@@ -95,7 +99,7 @@ class TweenObject {
 		return this;
 	}
 	
-	public function start() : FastList<TweenProperty> {
+	public function start() : #if haxe3 GenericStack<TweenProperty> #else FastList<TweenProperty> #end {
 		_nbFinished	= 0;
 		for ( tweenProp in tweens )
 			tweenProp.start();				
@@ -165,13 +169,14 @@ class TweenProperty extends Tween{
 					case 'rotation'		: __onUpdateRotation;
 					case 'scaleX'		: __onUpdateScaleX;
 					case 'scaleY'		: __onUpdateScaleY;
-					#if flash_10
+					#if flash10
 						case 'z'			: __onUpdateZ;
 						case 'scaleZ'		: __onUpdateScaleZ;
 						case 'rotationX'	: __onUpdateRotationX;
 						case 'rotationY'	: __onUpdateRotationY;
 						case 'rotationZ'	: __onUpdateRotationZ;
 					#end
+					default: __onUpdate;
 				}, onFinish );
 			}else
 				super( Reflect.getProperty( target, property ), value, duration, easing, autostart, __onUpdate, onFinish );
@@ -193,7 +198,7 @@ class TweenProperty extends Tween{
 		function __onUpdateRotation( n : Float ) { _doTarget.rotation = n; }
 		function __onUpdateScaleX( n : Float ) { _doTarget.scaleX = n; }
 		function __onUpdateScaleY( n : Float ) { _doTarget.scaleY = n; }
-		#if flash_10
+		#if flash10
 			function __onUpdateZ( n : Float ) {	_doTarget.z = n; }
 			function __onUpdateScaleZ( n : Float ) { _doTarget.scaleZ = n; }
 			function __onUpdateRotationX( n : Float ) { _doTarget.rotationX = n; }
@@ -240,8 +245,8 @@ class TweenProperty extends Tween{
 */
 
 class Tween {
-	static var _aTweens	= new FastList<Tween>();
-	static var _aPaused	= new FastList<Tween>();
+	static var _aTweens	= #if haxe3 new GenericStack<Tween>(); #else new FastList<Tween>(); #end
+	static var _aPaused	= #if haxe3 new GenericStack<Tween>(); #else new FastList<Tween>(); #end
 	
 	#if ( !nme && js || flash8 )
 		static var _timer	: haxe.Timer;

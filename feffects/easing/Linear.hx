@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Linear implements haxe.Public {
+@:publicFields class Linear #if !haxe3 implements haxe.Public #end {
 	inline static function easeNone ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		return c * t / d + b;
 	}

@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Circ implements haxe.Public {
+@:publicFields class Circ #if !haxe3 implements haxe.Public #end {
 	inline static function easeIn ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		return -c * ( Math.sqrt( 1 - ( t /= d ) * t ) - 1 ) + b;
 	}

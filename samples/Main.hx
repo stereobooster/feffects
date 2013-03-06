@@ -18,7 +18,11 @@ import feffects.easing.Quart;
 	import flash.MovieClip;
 	import flash.Lib;
 #elseif (js && !nme)
-	import js.Dom;
+	#if haxe3
+		import js.Browser;
+	#else
+		import js.Dom;
+	#end
 	import js.Lib;
 #elseif nme
 	import nme.display.MovieClip;
@@ -57,8 +61,13 @@ class Main {
 				Lib.current.addChild( sprite );
 			#elseif js
 				// new local var sprite needed...js bug ???
-				var sprite = js.Lib.document.createElement( "div" );
-				Lib.document.body.appendChild( sprite );
+				#if haxe3
+					var sprite = Browser.document.createElement( "div" );
+					Browser.document.body.appendChild( sprite );
+				#else
+					var sprite = Lib.document.createElement( "div" );
+					Lib.document.body.appendChild( sprite );
+				#end
 				sprite.style.position = "absolute";
 				sprite.style.backgroundColor = "#000000";
 				sprite.style.padding = "5px";

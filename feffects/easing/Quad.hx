@@ -1,6 +1,6 @@
 package feffects.easing;
 
-class Quad implements haxe.Public {
+@:publicFields class Quad #if !haxe3 implements haxe.Public #end {
 	inline static function easeIn ( t : Float, b : Float, c : Float, d : Float ) : Float {
 		return c * ( t /= d ) * t + b;
 	}
