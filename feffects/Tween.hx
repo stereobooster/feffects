@@ -20,7 +20,7 @@ typedef Easing = Float->Float->Float->Float->Float;
 
 /**
 * Class that allows tweening properties of an object.<br/>
-* Version 1.4.0
+* Version 3.0.0
 * Compatible haxe 3 - flash/js/NME
 * Usage :<br/>
 * import feffects.easing.Elastic;<br/>
@@ -210,7 +210,7 @@ class TweenProperty extends Tween{
 
 /**
 * Class that allows tweening numerical values of an object.<br/>
-* Version 1.4.0
+* Version 3.0.0
 * Compatible haxe 3 - flash/js/NME
 * Usage :<br/>
 * import feffects.Tween;<br/>
