@@ -1,0 +1,15 @@
+-main ApplicationMain 
+-lib nme
+-lib feffects
+-cp D:\workspace\SDK\haxe\lib\nme/git/
+-D nme4=1
+-D nme_ver=4.0.0
+-D nme_install_tool=1
+-D html5
+-D web
+-js export/html5/bin/FEffectsSample.js
+-cp export/html5/haxe
+-D html5
+-D html
+--remap flash:nme
+--remap native:browser

@@ -1,7 +1,7 @@
 ﻿package feffects;
-
+ 
 #if haxe3
-	import haxe.ds.GenericStack;
+	import haxe.ds.GenericStack in FastList;
 #else
 	import haxe.FastList;
 #end
@@ -50,7 +50,7 @@ typedef Easing = Float->Float->Float->Float->Float;
 
 class TweenObject {
 	
-	public var tweens		(default, null)			: #if haxe3 GenericStack<TweenProperty>; #else FastList<TweenProperty>; #end
+	public var tweens		(default, null)			: FastList<TweenProperty>;
 	public var target		(default, null)			: Dynamic;
 	public var properties	(default, null)			: Dynamic;
 	public var duration		(default, null)			: Int;
@@ -80,7 +80,7 @@ class TweenObject {
 				
 		this.onFinish( onFinish );
 		
-		tweens		= new #if haxe3 GenericStack<TweenProperty>(); #else FastList<TweenProperty>(); #end
+		tweens		= new FastList<TweenProperty>();
 		_nbTotal	= 0;
 		for ( key in Reflect.fields( properties ) ) {
 			var tp = new TweenProperty( target, key, Reflect.field( properties, key ), duration, easing, false );
@@ -99,7 +99,7 @@ class TweenObject {
 		return this;
 	}
 	
-	public function start() : #if haxe3 GenericStack<TweenProperty> #else FastList<TweenProperty> #end {
+	public function start() : FastList<TweenProperty> {
 		_nbFinished	= 0;
 		for ( tweenProp in tweens )
 			tweenProp.start();				
@@ -245,8 +245,8 @@ class TweenProperty extends Tween{
 */
 
 class Tween {
-	static var _aTweens	= #if haxe3 new GenericStack<Tween>(); #else new FastList<Tween>(); #end
-	static var _aPaused	= #if haxe3 new GenericStack<Tween>(); #else new FastList<Tween>(); #end
+	static var _aTweens	= new FastList<Tween>();
+	static var _aPaused	= new FastList<Tween>();
 	
 	#if ( !nme && js || flash8 )
 		static var _timer	: haxe.Timer;
@@ -502,10 +502,8 @@ class Tween {
 	}
 	
 	inline function getStamp() {
-		#if neko
-			return neko.Sys.time() * 1000;
-		#elseif cpp
-			return cpp.Sys.time() * 1000;
+		#if sys
+			return Sys.time() * 1000;
 		#elseif js
 			return Date.now().getTime();
 		#elseif flash

@@ -9,5 +9,5 @@
     <tag v="cpp"/>
     <tag v="nme"/>
     <description>Set of effects (tweens, sineloops...) targeting Flash / JS / NME (Neko, C++, Windows, Linux, OSX, Android, iOS, webOS, BlackBerry, HTML5)</description>
-    <version name="3.0.0">1.4.0 : Full Haxe 3 Support</version>
+    <version name="3.0.0">Full Haxe 3 Support</version>
 </project>
