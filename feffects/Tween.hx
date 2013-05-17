@@ -497,7 +497,7 @@ class Tween {
 		position = curTime;		
 	}
 	
-	inline function getCurVal( curTime : Int ) : Float {
+	function getCurVal( curTime : Int ) : Float {
 		return _easingF( curTime, _initVal, _endVal - _initVal, duration );
 	}
 	
