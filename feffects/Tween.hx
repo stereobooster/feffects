@@ -16,7 +16,7 @@
 	import haxe.Timer;
 #end
 
-typedef Easing = Float->Float->Float->Float->Float;
+import feffects.Easing;
 
 /**
 * Class that allows tweening properties of an object.<br/>
@@ -515,3 +515,4 @@ class Tween {
 		return c / 2 * ( Math.sin( Math.PI * ( t / d - 0.5 ) ) + 1 ) + b;
 	}
 }
+
