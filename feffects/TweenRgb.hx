@@ -28,9 +28,9 @@ class TweenRgb extends Tween {
 
 	override function getCurVal( curTime : Int ) : Float {
 		var c = {
-			r: _easingF( curTime, _initVals.r, _endVals.r - _initVals.r, duration ),
-			g: _easingF( curTime, _initVals.g, _endVals.g - _initVals.g, duration ),
-			b: _easingF( curTime, _initVals.b, _endVals.b - _initVals.b, duration )
+			r: Math.floor(_easingF( curTime, _initVals.r, _endVals.r - _initVals.r, duration )),
+			g: Math.floor(_easingF( curTime, _initVals.g, _endVals.g - _initVals.g, duration )),
+			b: Math.floor(_easingF( curTime, _initVals.b, _endVals.b - _initVals.b, duration ))
 		};
 		return RgbToInt(c);
 	}
